@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
 
-const productSchema = new mongoose.Schema({
-
+const productSchema = new Schema({
   name: {
     type: String,
     required: true,
@@ -36,15 +36,18 @@ const productSchema = new mongoose.Schema({
     required: true
   },
 
-  images: [
-    {
-      type: String
-    }
-  ],
+  imagePath : {
+    type : String
+  },
+
+  imageURL : {
+    type : String
+  },
 
   seller: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    type : String,
+    // type: mongoose.Schema.Types.ObjectId,
+    // ref: "User",
     required: true
   },
 
@@ -65,4 +68,4 @@ const productSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-module.exports = mongoose.model("Product", productSchema);
+module.exports = mongoose.model("product", productSchema);
