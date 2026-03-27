@@ -1,16 +1,27 @@
-const { validateData, generateOTP } = require("../utils/authUtils");
+const {
+  validateData,
+  generateOTP,
+  generatTempAccessToken,
+  generatAccessToken,
+  genrateRefreshToken,
+} = require("../utils/authUtils");
 const {
   findUserByEmail,
   createUserTempararyCollection,
   findUserByEmailAndOtp,
   createUserCollection,
+  createRefeshToken,
+  findRefreshTokenByToken,
+  findUserById,
 } = require("../model/authModel");
 const { sendOTP } = require("../utils/sendMail");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 // register controller
 const registerController = async (req, res) => {
   const { gmail, password, name, mobile, address } = req.body;
-  console.log("YES");
+  // console.log(req.tempUser);
 
   try {
     if (!gmail || !password || !name || !mobile || !address) {
@@ -28,6 +39,15 @@ const registerController = async (req, res) => {
   }
 
   try {
+    const isUserExist = await findUserByEmail(gmail);
+
+    if (isUserExist) {
+      return res.status(400).json({
+        message: "User Allready Exist",
+        status: 400,
+      });
+    }
+
     const isUserCreated = await createUserCollection(
       gmail,
       password,
@@ -35,8 +55,6 @@ const registerController = async (req, res) => {
       mobile,
       address,
     );
-
-    console.log("is", isUserCreated);
 
     if (!isUserCreated) {
       return res.send({
@@ -51,9 +69,7 @@ const registerController = async (req, res) => {
       data: isUserCreated,
     });
   } catch (err) {
-    console.log("error", err);
-
-    return res.send({
+    return res.status(500).json({
       status: 500,
       message: "Internal server error",
       error: err,
@@ -62,12 +78,62 @@ const registerController = async (req, res) => {
 };
 
 // login controller
-const loginController = (req, res) => {
-  console.log("from login controller");
-  return res.send("all ok");
+const loginController = async (req, res) => {
+  const { gmail, passward } = req.body;
+
+  if (!gmail || !passward) {
+    return res.status(400).json({
+      message: "Missing Details",
+      status: 400,
+    });
+  }
+
+  try {
+    const empDetails = await findUserByEmail(gmail);
+
+    if (!empDetails) {
+      return res.status(400).json({
+        message: "User not found please register first",
+        status: 400,
+      });
+    }
+
+    const isMatched = await bcrypt.compare(passward, empDetails?.password);
+
+    if (!isMatched) {
+      return res.status(400).json({
+        message: "Wrong Password",
+        status: 400,
+      });
+    }
+
+    const accessToken = generatAccessToken(gmail, empDetails._id);
+    const refreshToken = genrateRefreshToken(empDetails._id);
+
+    await createRefeshToken(refreshToken, empDetails._id);
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: false, // true in production
+      sameSite: "strict",
+    });
+
+    return res.status(200).json({
+      message: "Login Successfull",
+      status: 200,
+      data: empDetails,
+      token: accessToken,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      status: 500,
+      error: error,
+    });
+  }
 };
 
-// send otp controller
+// send otp controllerJ
 const sendOtpController = async (req, res) => {
   const { gmail } = req.body;
 
@@ -98,8 +164,6 @@ const sendOtpController = async (req, res) => {
       status: 200,
     });
   } catch (error) {
-    console.log("error:", error);
-
     return res.status(400).json({
       status: 400,
       error: error,
@@ -128,13 +192,13 @@ const verifyOtpController = async (req, res) => {
     }
 
     if (userExist.email === gmail && userExist.otp === otp) {
-      console.log("yes");
+      const token = generatTempAccessToken(userExist.email);
+      return res.status(200).json({
+        status: 200,
+        message: "OTP verified successfully",
+        token: token,
+      });
     }
-
-    return res.status(200).json({
-      status: 200,
-      message: "OTP verified successfully",
-    });
   } catch (error) {
     return res.status(400).json({
       status: 400,
@@ -144,9 +208,44 @@ const verifyOtpController = async (req, res) => {
   }
 };
 
+//  refresh token
+const refreshTokenController = async (req, res) => {
+  const token = req?.cookies?.refreshToken;
+  if (!token) {
+    return res.status(401).json({
+      message: "Token not found",
+    });
+  }
+
+  try {
+    const stored = await findRefreshTokenByToken(token);
+
+    if (!stored) {
+      return res.status(404).json({
+        message: "Invalid token",
+      });
+    }
+
+    const decode = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    const id = stored.userId;
+    const user = await findUserById(id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const accessToken = generatAccessToken(user?.email, id);
+
+    return res.status(200).json({ accessToken });
+  } catch (error) {
+    res.status(403).json({ message: "Expired token" });
+  }
+};
+
 module.exports = {
   registerController,
   loginController,
   sendOtpController,
   verifyOtpController,
+  refreshTokenController,
 };

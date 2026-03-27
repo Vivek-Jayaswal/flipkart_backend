@@ -1,4 +1,5 @@
 const otpGenerator = require("otp-generator");
+const jwt = require("jsonwebtoken");
 
 const isEmailValidate = ({ key }) => {
   const isEmail =
@@ -23,4 +24,48 @@ const generateOTP = () => {
   });
 };
 
-module.exports = { validateData, generateOTP };
+const generatTempAccessToken = (email) => {
+  const token = jwt.sign(
+    { email: email, purpose: "email_verification" },
+    process.env.JWT_SECRET_KEY,
+    { expiresIn: "10m" },
+  );
+
+  return token;
+};
+const generatAccessToken = (email, id) => {
+  const token = jwt.sign({ id: id, email: email }, process.env.JWT_SECRET_KEY, {
+    expiresIn: "15m",
+  });
+
+  return token;
+};
+
+const verifyToken = (token) => {
+  try {
+    const decode = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    if (decode.purpose !== "email_verification") {
+      throw new Error("Invalid token purpose");
+    }
+
+    return decode.email;
+  } catch (error) {
+    throw new Error("Invalid or expired token");
+  }
+};
+
+const genrateRefreshToken = (id) => {
+  const token = jwt.sign({ userId: id }, process.env.JWT_SECRET_KEY, {
+    expiresIn: "7d",
+  });
+  return token;
+};
+
+module.exports = {
+  validateData,
+  generateOTP,
+  generatTempAccessToken,
+  generatAccessToken,
+  verifyToken,
+  genrateRefreshToken,
+};
