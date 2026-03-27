@@ -1,5 +1,6 @@
 const express = require("express");
 require("dotenv").config();
+const cookieParser = require("cookie-parser");
 const app = express();
 
 // file import
@@ -11,6 +12,7 @@ const productRouter = require("./router/productRouter");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static("uploads"));
+app.use(cookieParser());
 
 app.use("/auth", authRouter);
 app.use("/product", productRouter);

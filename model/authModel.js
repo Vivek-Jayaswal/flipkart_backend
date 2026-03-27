@@ -1,9 +1,16 @@
 const userSchema = require("../schemas/userSchema");
 const otpSchema = require("../schemas/otpSchema");
 const bcrypt = require("bcryptjs");
+const refreshTokenSchema = require("../schemas/refreshTokenSchema");
 
 const findUserByEmail = async (email) => {
   return await userSchema.findOne({ email });
+};
+const findRefreshTokenByToken = async (token) => {
+  return await refreshTokenSchema.findOne({ token : token });
+};
+const findUserById = async (id) => {
+  return await userSchema.findOne({ _id: id });
 };
 
 const findUserByEmailAndOtp = async (email, otp) => {
@@ -19,22 +26,42 @@ const createUserTempararyCollection = async (email, otp) => {
   return tempUser;
 };
 
-const createUserCollection = async (email, password, name, mobile, address) => {
-  const hashedPassword = await bcrypt.hash(
-    password,
-    Number(process.env.SALT_ROUNDS),
-  );
+const createUserCollection = (email, password, name, mobile, address) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const hashedPassword = await bcrypt.hash(
+        password,
+        Number(process.env.SALT_ROUNDS),
+      );
 
-  const user = new userSchema({
-    email,
-    password: hashedPassword,
-    name,
-    mobile,
-    address,
+      const user = new userSchema({
+        email,
+        password: hashedPassword,
+        name,
+        mobile,
+        address,
+        isVerified: true,
+      });
+      const userCreated = await user.save();
+      resolve(userCreated);
+    } catch (error) {
+      reject(error);
+    }
   });
+};
 
-  console.log("user:", user);
-  return await user.save();
+const createRefeshToken = (token, id) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const refresToken = await refreshTokenSchema.create({
+        userId: id,
+        token: token,
+      });
+      resolve(refresToken);
+    } catch (error) {
+      reject(error);
+    }
+  });
 };
 
 module.exports = {
@@ -42,4 +69,7 @@ module.exports = {
   findUserByEmailAndOtp,
   createUserTempararyCollection,
   createUserCollection,
+  createRefeshToken,
+  findRefreshTokenByToken,
+  findUserById,
 };
