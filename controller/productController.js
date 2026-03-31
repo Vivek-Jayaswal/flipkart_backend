@@ -15,7 +15,9 @@ const createProductController = async (req, res) => {
     ratings,
     numReviews,
   } = req?.body;
-  // const file = req?.file;
+  const sellerId = req?.seller?._id;
+
+  console.log(sellerId);
 
   try {
     if (!req?.file) {
@@ -36,7 +38,7 @@ const createProductController = async (req, res) => {
         stock,
         imagePath,
         imageURL,
-        seller,
+        sellerId,
         ratings,
         numReviews,
         // isActive,

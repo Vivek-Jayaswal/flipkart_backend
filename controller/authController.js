@@ -13,6 +13,9 @@ const {
   createRefeshToken,
   findRefreshTokenByToken,
   findUserById,
+  createSellerCollection,
+  findSellerById,
+  updateRoleInCollection,
 } = require("../model/authModel");
 const { sendOTP } = require("../utils/sendMail");
 const bcrypt = require("bcryptjs");
@@ -20,31 +23,61 @@ const jwt = require("jsonwebtoken");
 
 // register controller
 const registerController = async (req, res) => {
-  const { gmail, password, name, mobile, address } = req.body;
-  // console.log(req.tempUser);
+  const {
+    gmail,
+    password,
+    name,
+    mobile,
+    address,
+    role,
+    businessName,
+    storeName,
+    businessType,
+    taxDetails,
+    storeAddress,
+    bankDetails,
+  } = req.body;
 
-  try {
-    if (!gmail || !password || !name || !mobile || !address) {
-      return res.send({
-        status: 400,
-        message: "All fields are required",
-      });
-    }
-  } catch (error) {
+  if (!gmail || !password || !name || !mobile || !address || !role) {
     return res.send({
       status: 400,
       message: "All fields are required",
-      error: error,
     });
   }
 
   try {
     const isUserExist = await findUserByEmail(gmail);
 
-    if (isUserExist) {
-      return res.status(400).json({
-        message: "User Allready Exist",
-        status: 400,
+    if (isUserExist && isUserExist.isVerified) {
+      if (isUserExist.roles.includes(role)) {
+        return res.status(400).json({
+          message: "User Allready Exist",
+          status: 400,
+        });
+      }
+
+      await updateRoleInCollection(role, isUserExist._id);
+
+      if (role === "seller") {
+        const isSellerExist = await findSellerById(isUserExist._id);
+
+        if (!isSellerExist) {
+          await createSellerCollection(
+            isUserExist._id,
+            businessName,
+            storeName,
+            businessType,
+            taxDetails,
+            storeAddress,
+            bankDetails,
+          );
+        }
+      }
+
+      return res.status(200).json({
+        message: "User role updated successfully",
+        status: 200,
+        data: isUserExist,
       });
     }
 
@@ -55,6 +88,18 @@ const registerController = async (req, res) => {
       mobile,
       address,
     );
+
+    if (role === "seller" && isUserCreated) {
+      await createSellerCollection(
+        isUserCreated._id,
+        businessName,
+        storeName,
+        businessType,
+        taxDetails,
+        storeAddress,
+        bankDetails,
+      );
+    }
 
     if (!isUserCreated) {
       return res.send({
@@ -69,6 +114,8 @@ const registerController = async (req, res) => {
       data: isUserCreated,
     });
   } catch (err) {
+    console.log(err);
+
     return res.status(500).json({
       status: 500,
       message: "Internal server error",
@@ -162,6 +209,7 @@ const sendOtpController = async (req, res) => {
     return res.status(200).json({
       message: "OTP sent successfully",
       status: 200,
+      data: otp,
     });
   } catch (error) {
     return res.status(400).json({
