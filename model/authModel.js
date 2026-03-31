@@ -14,7 +14,7 @@ const findUserById = async (id) => {
   return await userSchema.findOne({ _id: id });
 };
 const findSellerById = async (id) => {
-  return await sellerSchema.findOne({ _id: id });
+  return await sellerSchema.findOne({ userId: id });
 };
 
 const findUserByEmailAndOtp = async (email, otp) => {
