@@ -39,7 +39,7 @@ const registerController = async (req, res) => {
   } = req.body;
 
   if (!gmail || !password || !name || !mobile || !address || !role) {
-    return res.send({
+    return res.status(400).json({
       status: 400,
       message: "All fields are required",
     });
@@ -196,7 +196,7 @@ const sendOtpController = async (req, res) => {
   try {
     const isUserExist = await findUserByEmail(gmail);
     if (isUserExist) {
-      return res.send({
+      return res.status(400).json({
         message: "User already exist",
         status: 400,
       });

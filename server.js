@@ -2,7 +2,7 @@ const express = require("express");
 require("dotenv").config();
 const cookieParser = require("cookie-parser");
 const app = express();
-const cors = require("cors");;
+const cors = require("cors");
 
 // file import
 const db = require("./db");
@@ -14,7 +14,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static("uploads"));
 app.use(cookieParser());
-app.use(cors())
+
+app.use(
+  cors({
+    // origin: "http://localhost:5173",
+    origin: process.env.LIVE_FRONTEND_URL,
+    credentials: true,
+  }),
+);
 
 app.use("/auth", authRouter);
 app.use("/product", productRouter);
