@@ -21,16 +21,16 @@ const findUserByEmailAndOtp = async (email, otp) => {
   return await otpSchema.findOne({ email, otp }, {});
 };
 
-const createUserTempararyCollection = async (email, otp) => {
+const createUserTempararyCollection = async (email, otp, role) => {
   const tempUser = await otpSchema.findOneAndUpdate(
     { email },
-    { email, otp, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
+    { email, otp, role, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
     { upsert: true, new: true },
   );
   return tempUser;
 };
 
-const createUserCollection = (email, password, name, mobile, address) => {
+const createUserCollection = (email, password, mobile, name, address) => {
   return new Promise(async (resolve, reject) => {
     try {
       const hashedPassword = await bcrypt.hash(
@@ -56,6 +56,8 @@ const createUserCollection = (email, password, name, mobile, address) => {
 
 const updateRoleInCollection = (role, id) => {
   return new Promise(async (resolve, reject) => {
+    console.log(role);
+
     try {
       const updatedUserRole = await userSchema.findOneAndUpdate(
         { _id: id },
@@ -68,28 +70,45 @@ const updateRoleInCollection = (role, id) => {
   });
 };
 
-const createSellerCollection = (
-  user,
+const createSellerCollection = (user) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const seller = new sellerSchema({
+        userId: user,
+      });
+      const sellerCreated = await seller.save();
+      resolve(sellerCreated);
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+const updateSellerCollection = ({
+  userId,
   businessName,
   storeName,
   businessType,
   taxDetails,
   storeAddress,
   bankDetails,
-) => {
+}) => {
   return new Promise(async (resolve, reject) => {
     try {
-      const seller = new sellerSchema({
-        userId: user,
-        businessName,
-        storeName,
-        businessType,
-        taxDetails,
-        storeAddress,
-        bankDetails,
-      });
-      const sellerCreated = await seller.save();
-      resolve(sellerCreated);
+      const update = await sellerSchema.findOneAndUpdate(
+        { userId: userId },
+        {
+          $set: {
+            businessName,
+            storeName,
+            businessType,
+            taxDetails,
+            storeAddress,
+            bankDetails,
+          },
+        },
+        { new: true, runValidators: true },
+      );
+      resolve(update);
     } catch (error) {
       reject(error);
     }
@@ -114,6 +133,7 @@ module.exports = {
   findUserByEmail,
   findUserByEmailAndOtp,
   createUserTempararyCollection,
+  updateSellerCollection,
   createUserCollection,
   createRefeshToken,
   findRefreshTokenByToken,

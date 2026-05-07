@@ -8,6 +8,7 @@ const {
   sendOtpController,
   verifyOtpController,
   refreshTokenController,
+  sellerDetailsRegisterController,
 } = require("../controller/authController");
 
 const authRouter = express.Router();
@@ -15,6 +16,11 @@ const authRouter = express.Router();
 authRouter.post("/send-otp", sendOtpController);
 authRouter.post("/verify-otp", verifyOtpController);
 authRouter.post("/register", tempAuthMiddleware, registerController);
+authRouter.post(
+  "/update-seller-resiter-details",
+  tempAuthMiddleware,
+  sellerDetailsRegisterController,
+);
 authRouter.post("/login", loginController);
 authRouter.post("/refresh-token", refreshTokenController);
 
