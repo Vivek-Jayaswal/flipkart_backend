@@ -24,9 +24,9 @@ const generateOTP = () => {
   });
 };
 
-const generatTempAccessToken = (email) => {
+const generatTempAccessToken = (email, role) => {
   const token = jwt.sign(
-    { email: email, purpose: "email_verification" },
+    { email: email, role: role, purpose: "email_verification" },
     process.env.JWT_SECRET_KEY,
     { expiresIn: "10m" },
   );

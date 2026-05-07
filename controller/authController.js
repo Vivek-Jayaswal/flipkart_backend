@@ -16,6 +16,7 @@ const {
   createSellerCollection,
   findSellerById,
   updateRoleInCollection,
+  updateSellerCollection,
 } = require("../model/authModel");
 const { sendOTP } = require("../utils/sendMail");
 const bcrypt = require("bcryptjs");
@@ -23,30 +24,50 @@ const jwt = require("jsonwebtoken");
 
 // register controller
 const registerController = async (req, res) => {
-  const {
-    gmail,
-    password,
-    name,
-    mobile,
-    address,
-    role,
-    businessName,
-    storeName,
-    businessType,
-    taxDetails,
-    storeAddress,
-    bankDetails,
-  } = req.body;
+  const { gmail, password, name, mobile, address, role } = req.body;
 
-  if (!gmail || !password || !name || !mobile || !address || !role) {
+  if (
+    role === "buyer" &&
+    (!gmail || !password || !name || !mobile || !address || !role)
+  ) {
     return res.status(400).json({
       status: 400,
       message: "All fields are required",
     });
   }
 
+  if (role === "seller" && (!gmail || !mobile || !password)) {
+    return res.status(400).json({
+      status: 400,
+      message: "All fields are required",
+    });
+  }
+
+  if (!["buyer", "seller"].includes(role)) {
+    return res.status(400).json({
+      status: 400,
+      message: "Invalid role",
+    });
+  }
+
+  console.log(req.tempUser);
+
+  if (req.tempUser.role !== role) {
+    return res.status(400).json({
+      status: 400,
+      message: "Invalid user. user role mismatch",
+    });
+  }
+
   try {
     const isUserExist = await findUserByEmail(gmail);
+
+    if (isUserExist && !isUserExist.isVerified) {
+      return res.status(400).json({
+        status: 400,
+        message: "Please verify your account first",
+      });
+    }
 
     if (isUserExist && isUserExist.isVerified) {
       if (isUserExist.roles.includes(role)) {
@@ -62,56 +83,102 @@ const registerController = async (req, res) => {
         const isSellerExist = await findSellerById(isUserExist._id);
 
         if (!isSellerExist) {
-          await createSellerCollection(
-            isUserExist._id,
-            businessName,
-            storeName,
-            businessType,
-            taxDetails,
-            storeAddress,
-            bankDetails,
-          );
+          await createSellerCollection(isUserExist._id);
+
+          return res.status(200).json({
+            message: "User role updated successfully",
+            status: 200,
+            data: isUserExist,
+          });
         }
       }
+    }
+
+    if (role === "buyer") {
+      const isUserCreated = await createUserCollection(
+        gmail,
+        password,
+        mobile,
+        name,
+        address,
+      );
+      return res.send({
+        status: 200,
+        message: "User registered successfully",
+        data: isUserCreated,
+      });
+    }
+
+    if (role === "seller") {
+      const isUserCreated = await createUserCollection(gmail, password, mobile);
+
+      await createSellerCollection(isUserCreated._id);
+
+      return res.send({
+        status: 200,
+        message: "Seller registered successfully",
+        data: isUserCreated,
+      });
+    }
+  } catch (err) {
+    console.log(err);
+
+    return res.status(500).json({
+      status: 500,
+      message: "Internal server error",
+      error: err,
+    });
+  }
+};
+
+const sellerDetailsRegisterController = async (req, res) => {
+  const {
+    gmail,
+    name,
+    mobile,
+    password,
+    address,
+    role,
+    businessName,
+    storeName,
+    businessType,
+    taxDetails,
+    storeAddress,
+    bankDetails,
+  } = req.body;
+
+  if (role === "seller" && (!gmail || !mobile || !password)) {
+    return res.status(400).json({
+      status: 400,
+      message: "All fields are required",
+    });
+  }
+
+  try {
+    const isUserExist = await findUserByEmail(gmail);
+    console.log(isUserExist);
+
+    if (isUserExist && isUserExist.isVerified) {
+      const data = await updateSellerCollection({
+        userId: isUserExist._id,
+        businessName: businessName,
+        storeName: storeName,
+        businessType: businessType,
+        taxDetails: taxDetails,
+        storeAddress: storeAddress,
+        bankDetails: bankDetails,
+      });
 
       return res.status(200).json({
-        message: "User role updated successfully",
         status: 200,
-        data: isUserExist,
+        message: "Details updated successfull",
+        data: data,
       });
     }
 
-    const isUserCreated = await createUserCollection(
-      gmail,
-      password,
-      name,
-      mobile,
-      address,
-    );
-
-    if (role === "seller" && isUserCreated) {
-      await createSellerCollection(
-        isUserCreated._id,
-        businessName,
-        storeName,
-        businessType,
-        taxDetails,
-        storeAddress,
-        bankDetails,
-      );
-    }
-
-    if (!isUserCreated) {
-      return res.send({
-        status: 400,
-        message: "User registration failed",
-      });
-    }
-
-    return res.send({
-      status: 200,
-      message: "User registered successfully",
-      data: isUserCreated,
+    return res.status(400).json({
+      status: 400,
+      message: "User not found for given mail id",
     });
   } catch (err) {
     console.log(err);
@@ -182,7 +249,15 @@ const loginController = async (req, res) => {
 
 // send otp controllerJ
 const sendOtpController = async (req, res) => {
-  const { gmail } = req.body;
+  const { gmail, role } = req.body;
+
+  if (!gmail || !role) {
+    return res.status(400).json({
+      status: 400,
+      success: false,
+      message: "Fields are missing",
+    });
+  }
 
   try {
     await validateData({ email: gmail });
@@ -195,7 +270,9 @@ const sendOtpController = async (req, res) => {
   }
   try {
     const isUserExist = await findUserByEmail(gmail);
-    if (isUserExist) {
+    console.log(isUserExist);
+
+    if (isUserExist && isUserExist.roles.includes(role)) {
       return res.status(400).json({
         message: "User already exist",
         status: 400,
@@ -203,7 +280,7 @@ const sendOtpController = async (req, res) => {
     }
 
     const otp = generateOTP();
-    await createUserTempararyCollection(gmail, otp);
+    await createUserTempararyCollection(gmail, otp, role);
     await sendOTP(gmail, otp);
 
     return res.status(200).json({
@@ -221,7 +298,16 @@ const sendOtpController = async (req, res) => {
 
 // verify otp controller
 const verifyOtpController = async (req, res) => {
-  const { gmail, otp } = req.body;
+  const { gmail, otp, role } = req.body;
+  console.log("calling");
+
+  if (!gmail || !otp || !role) {
+    return res.status(400).json({
+      status: 400,
+      success: false,
+      message: "Fields are missing",
+    });
+  }
 
   try {
     const userExist = await findUserByEmailAndOtp(gmail, otp);
@@ -232,15 +318,26 @@ const verifyOtpController = async (req, res) => {
       });
     }
 
-    if (userExist.expiresAt < new Date()) {
+    if (userExist && userExist.role !== role) {
+      return res.status(400).json({
+        status: 400,
+        message: "Invalid user role",
+      });
+    }
+
+    if (userExist.role === role && userExist.expiresAt < new Date()) {
       return res.status(400).json({
         status: 400,
         message: "OTP has expired",
       });
     }
 
-    if (userExist.email === gmail && userExist.otp === otp) {
-      const token = generatTempAccessToken(userExist.email);
+    if (
+      userExist.email === gmail &&
+      userExist.otp === otp &&
+      userExist.role === role
+    ) {
+      const token = generatTempAccessToken(userExist.email, role);
       return res.status(200).json({
         status: 200,
         message: "OTP verified successfully",
@@ -296,4 +393,5 @@ module.exports = {
   sendOtpController,
   verifyOtpController,
   refreshTokenController,
+  sellerDetailsRegisterController,
 };

@@ -6,33 +6,39 @@ const sellerSchema = new Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
     },
-    businessName: { type: String, required: true },
-    storeName: { type: String, required: true, unique: true },
+    businessName: { type: String, default: "" },
+    storeName: { type: String, default: "", unique: true },
     businessType: {
-      type: String,
       enum: ["Individual", "Partnership", "Company"],
-      required: true,
+      type: String,
+      default: "Individual",
     },
 
     taxDetails: {
-      pan: { type: String, required: true },
-      gstin: { type: String },
+      pan: { type: String, default: "" },
+      gstin: { type: String, default: "" },
     },
 
     storeAddress: {
-      registered: { type: String, required: true },
-      pickup: { type: String, required: true },
-      city: String,
-      state: String,
-      pincode: Number,
+      registered: { type: String, default: "" },
+      pickup: { type: String, default: "" },
+      city: { type: String, default: "" },
+      state: { type: String, default: "" },
+      pincode: { type: Number, default: "" },
     },
 
     bankDetails: {
-      accountNumber: { type: String, required: true },
-      ifscCode: { type: String, required: true },
-      bankName: String,
+      accountNumber: {
+        type: String,
+        default: "",
+      },
+
+      ifsc: {
+        type: String,
+        default: "",
+      },
+      bankName: { type: String, default: "" },
     },
 
     status: {
