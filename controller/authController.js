@@ -85,6 +85,17 @@ const registerController = async (req, res) => {
         if (!isSellerExist) {
           await createSellerCollection(isUserExist._id);
 
+          const accessToken = generatAccessToken(gmail, isUserExist._id);
+          const refreshToken = genrateRefreshToken(isUserExist._id);
+
+          await createRefeshToken(refreshToken, isUserExist._id);
+
+          res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: false, // true in production
+            sameSite: "strict",
+          });
+
           return res.status(200).json({
             message: "User role updated successfully",
             status: 200,
@@ -112,12 +123,25 @@ const registerController = async (req, res) => {
     if (role === "seller") {
       const isUserCreated = await createUserCollection(gmail, password, mobile);
 
+      console.log(isUserCreated);
+
       await createSellerCollection(isUserCreated._id);
+      const accessToken = generatAccessToken(gmail, isUserCreated._id);
+      const refreshToken = genrateRefreshToken(isUserCreated._id);
+
+      await createRefeshToken(refreshToken, isUserCreated._id);
+
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: false, // true in production
+        sameSite: "strict",
+      });
 
       return res.send({
         status: 200,
         message: "Seller registered successfully",
         data: isUserCreated,
+        token: accessToken,
       });
     }
   } catch (err) {
@@ -133,36 +157,32 @@ const registerController = async (req, res) => {
 
 const sellerDetailsRegisterController = async (req, res) => {
   const {
-    gmail,
     name,
-    mobile,
-    password,
     address,
     role,
-    businessName,
-    storeName,
     businessType,
     taxDetails,
     storeAddress,
     bankDetails,
   } = req.body;
 
-  if (role === "seller" && (!gmail || !mobile || !password)) {
+  const userInfo = req.user;
+
+  console.log("info", userInfo._id);
+
+  if (!userInfo.roles.includes("seller")) {
     return res.status(400).json({
       status: 400,
-      message: "All fields are required",
+      message: "This details only seller can fill",
     });
   }
 
   try {
-    const isUserExist = await findUserByEmail(gmail);
-    console.log(isUserExist);
+    const isUserExist = await findUserById(userInfo._id);
 
     if (isUserExist && isUserExist.isVerified) {
       const data = await updateSellerCollection({
         userId: isUserExist._id,
-        businessName: businessName,
-        storeName: storeName,
         businessType: businessType,
         taxDetails: taxDetails,
         storeAddress: storeAddress,

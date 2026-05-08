@@ -85,8 +85,6 @@ const createSellerCollection = (user) => {
 };
 const updateSellerCollection = ({
   userId,
-  businessName,
-  storeName,
   businessType,
   taxDetails,
   storeAddress,
@@ -98,8 +96,6 @@ const updateSellerCollection = ({
         { userId: userId },
         {
           $set: {
-            businessName,
-            storeName,
             businessType,
             taxDetails,
             storeAddress,

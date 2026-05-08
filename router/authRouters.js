@@ -10,6 +10,8 @@ const {
   refreshTokenController,
   sellerDetailsRegisterController,
 } = require("../controller/authController");
+const { isAuthMiddleWare } = require("../middlewares/authMiddleWare.js");
+const { isSellerMiddleWare } = require("../middlewares/isSellerMiddleWare.js");
 
 const authRouter = express.Router();
 
@@ -18,7 +20,7 @@ authRouter.post("/verify-otp", verifyOtpController);
 authRouter.post("/register", tempAuthMiddleware, registerController);
 authRouter.post(
   "/update-seller-resiter-details",
-  tempAuthMiddleware,
+  isAuthMiddleWare,
   sellerDetailsRegisterController,
 );
 authRouter.post("/login", loginController);

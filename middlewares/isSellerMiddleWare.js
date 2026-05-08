@@ -8,13 +8,12 @@ const isSellerMiddleWare = async (req, res, next) => {
       .json({ message: "Access denied. Seller role required." });
   }
 
-//   console.log(user);
+  //   console.log(user);
 
   try {
     const seller = await findSellerById(user._id);
 
-    console.log(seller);
-    
+    // console.log(seller);
 
     if (!seller) {
       return res.status(404).json({ message: "Seller profile not found." });
