@@ -30,7 +30,7 @@ const createUserTempararyCollection = async (email, otp, role) => {
   return tempUser;
 };
 
-const createUserCollection = (email, password, mobile, name, address) => {
+const createUserCollection = (email, password, mobile, role, name, address) => {
   return new Promise(async (resolve, reject) => {
     try {
       const hashedPassword = await bcrypt.hash(
@@ -42,6 +42,7 @@ const createUserCollection = (email, password, mobile, name, address) => {
         email,
         password: hashedPassword,
         name,
+        roles: role,
         mobile,
         address,
         isVerified: true,

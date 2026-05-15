@@ -9,6 +9,8 @@ const {
   verifyOtpController,
   refreshTokenController,
   sellerDetailsRegisterController,
+  verifySellerAuthController,
+  verifyBuyerAuthController,
 } = require("../controller/authController");
 const { isAuthMiddleWare } = require("../middlewares/authMiddleWare.js");
 const { isSellerMiddleWare } = require("../middlewares/isSellerMiddleWare.js");
@@ -25,5 +27,9 @@ authRouter.post(
 );
 authRouter.post("/login", loginController);
 authRouter.post("/refresh-token", refreshTokenController);
+
+// Verification endpoints - call these on app initialization
+authRouter.get("/verify-seller", isAuthMiddleWare, verifySellerAuthController);
+authRouter.get("/verify-buyer", isAuthMiddleWare, verifyBuyerAuthController);
 
 module.exports = authRouter;

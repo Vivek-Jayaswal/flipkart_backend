@@ -18,6 +18,19 @@ const {
   updateRoleInCollection,
   updateSellerCollection,
 } = require("../model/authModel");
+
+const getRefreshTokenCookieName = (role) => {
+  return role === "seller" ? "sellerRefreshToken" : "buyerRefreshToken";
+};
+
+const setRefreshTokenCookie = (res, refreshToken, role) => {
+  res.cookie(getRefreshTokenCookieName(role), refreshToken, {
+    httpOnly: true,
+    secure: false, // true in production
+    sameSite: "strict",
+  });
+};
+
 const { sendOTP } = require("../utils/sendMail");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -49,8 +62,6 @@ const registerController = async (req, res) => {
       message: "Invalid role",
     });
   }
-
-  console.log(req.tempUser);
 
   if (req.tempUser.role !== role) {
     return res.status(400).json({
@@ -90,11 +101,7 @@ const registerController = async (req, res) => {
 
           await createRefeshToken(refreshToken, isUserExist._id);
 
-          res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: false, // true in production
-            sameSite: "strict",
-          });
+          setRefreshTokenCookie(res, refreshToken, "seller");
 
           return res.status(200).json({
             message: "User role updated successfully",
@@ -110,6 +117,7 @@ const registerController = async (req, res) => {
         gmail,
         password,
         mobile,
+        role,
         name,
         address,
       );
@@ -121,7 +129,12 @@ const registerController = async (req, res) => {
     }
 
     if (role === "seller") {
-      const isUserCreated = await createUserCollection(gmail, password, mobile);
+      const isUserCreated = await createUserCollection(
+        gmail,
+        password,
+        mobile,
+        role,
+      );
 
       console.log(isUserCreated);
 
@@ -131,11 +144,7 @@ const registerController = async (req, res) => {
 
       await createRefeshToken(refreshToken, isUserCreated._id);
 
-      res.cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        secure: false, // true in production
-        sameSite: "strict",
-      });
+      setRefreshTokenCookie(res, refreshToken, "seller");
 
       return res.send({
         status: 200,
@@ -246,17 +255,20 @@ const loginController = async (req, res) => {
 
     await createRefeshToken(refreshToken, empDetails._id);
 
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: false, // true in production
-      sameSite: "strict",
-    });
+    const loginRole = req.body.role
+      ? req.body.role
+      : empDetails.roles?.includes("seller")
+        ? "seller"
+        : "buyer";
+
+    setRefreshTokenCookie(res, refreshToken, loginRole);
 
     return res.status(200).json({
       message: "Login Successfull",
       status: 200,
       data: empDetails,
       token: accessToken,
+      role: loginRole,
     });
   } catch (error) {
     return res.status(500).json({
@@ -375,7 +387,10 @@ const verifyOtpController = async (req, res) => {
 
 //  refresh token
 const refreshTokenController = async (req, res) => {
-  const token = req?.cookies?.refreshToken;
+  const role = req.body?.role || req.query?.role;
+  const refreshTokenCookieName = getRefreshTokenCookieName(role);
+  const token = req?.cookies?.[refreshTokenCookieName];
+
   if (!token) {
     return res.status(401).json({
       message: "Token not found",
@@ -407,6 +422,76 @@ const refreshTokenController = async (req, res) => {
   }
 };
 
+// Verify seller auth - called on app initialization to validate token with backend
+const verifySellerAuthController = async (req, res) => {
+  try {
+    const user = req.user; // From authMiddleware
+
+    if (!user) {
+      return res.status(401).json({
+        status: 401,
+        message: "User not authenticated",
+      });
+    }
+
+    // Check if user is a seller
+    if (!user.roles?.includes("seller")) {
+      return res.status(403).json({
+        status: 403,
+        message: "User is not a seller",
+      });
+    }
+
+    // Get seller details
+    const seller = await findSellerById(user._id);
+
+    return res.status(200).json({
+      status: 200,
+      message: "Seller verified successfully",
+      data: {
+        isSellerProfileCompleted: seller?.isSellerProfileCompleted ?? false,
+        role: "seller",
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      status: 500,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+// Verify buyer auth - similar for buyers
+const verifyBuyerAuthController = async (req, res) => {
+  try {
+    const user = req.user; // From authMiddleware
+
+    if (!user) {
+      return res.status(401).json({
+        status: 401,
+        message: "User not authenticated",
+      });
+    }
+
+    return res.status(200).json({
+      status: 200,
+      message: "Buyer verified successfully",
+      data: {
+        role: "buyer",
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      status: 500,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   registerController,
   loginController,
@@ -414,4 +499,6 @@ module.exports = {
   verifyOtpController,
   refreshTokenController,
   sellerDetailsRegisterController,
+  verifySellerAuthController,
+  verifyBuyerAuthController,
 };
