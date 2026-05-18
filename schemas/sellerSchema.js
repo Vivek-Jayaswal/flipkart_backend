@@ -7,8 +7,7 @@ const sellerSchema = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    businessName: { type: String, default: "" },
-    storeName: { type: String, default: "", unique: true },
+    // businessName: { type: String, default: "" },
     businessType: {
       enum: ["Individual", "Partnership", "Company"],
       type: String,
@@ -21,8 +20,8 @@ const sellerSchema = new Schema(
     },
 
     storeAddress: {
-      registered: { type: String, default: "" },
-      pickup: { type: String, default: "" },
+      storeName: { type: String, default: "" },
+      address: { type: String, default: "" },
       city: { type: String, default: "" },
       state: { type: String, default: "" },
       pincode: { type: Number, default: "" },

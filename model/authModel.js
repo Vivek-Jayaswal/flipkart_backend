@@ -13,6 +13,7 @@ const findRefreshTokenByToken = async (token) => {
 const findUserById = async (id) => {
   return await userSchema.findOne({ _id: id });
 };
+
 const findSellerById = async (id) => {
   return await sellerSchema.findOne({ userId: id });
 };
@@ -30,7 +31,7 @@ const createUserTempararyCollection = async (email, otp, role) => {
   return tempUser;
 };
 
-const createUserCollection = (email, password, mobile, name, address) => {
+const createUserCollection = (email, password, mobile, role, name, address) => {
   return new Promise(async (resolve, reject) => {
     try {
       const hashedPassword = await bcrypt.hash(
@@ -42,6 +43,7 @@ const createUserCollection = (email, password, mobile, name, address) => {
         email,
         password: hashedPassword,
         name,
+        roles: role,
         mobile,
         address,
         isVerified: true,
@@ -56,18 +58,36 @@ const createUserCollection = (email, password, mobile, name, address) => {
 
 const updateRoleInCollection = (role, id) => {
   return new Promise(async (resolve, reject) => {
-    console.log(role);
-
     try {
       const updatedUserRole = await userSchema.findOneAndUpdate(
         { _id: id },
         { $addToSet: { roles: role } },
+        { new: true },
       );
       resolve(updatedUserRole);
     } catch (error) {
       reject(error);
     }
   });
+};
+
+const updateSellerDataInCollection = ({ name, address, id }) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const updatedUserRole = await userSchema.findOneAndUpdate(
+        { _id: id },
+        { $set: { name: name, address: address, isProfileComplete: true } },
+        { new: true },
+      );
+      resolve(updatedUserRole);
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+const findRegreshTokenAndDelete = async (token) => {
+  return await refreshTokenSchema.findOneAndDelete({ token: token });
 };
 
 const createSellerCollection = (user) => {
@@ -83,10 +103,9 @@ const createSellerCollection = (user) => {
     }
   });
 };
+
 const updateSellerCollection = ({
   userId,
-  businessName,
-  storeName,
   businessType,
   taxDetails,
   storeAddress,
@@ -98,8 +117,6 @@ const updateSellerCollection = ({
         { userId: userId },
         {
           $set: {
-            businessName,
-            storeName,
             businessType,
             taxDetails,
             storeAddress,
@@ -141,4 +158,6 @@ module.exports = {
   createSellerCollection,
   updateRoleInCollection,
   findSellerById,
+  updateSellerDataInCollection,
+  findRegreshTokenAndDelete,
 };
