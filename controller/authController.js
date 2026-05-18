@@ -22,7 +22,11 @@ const {
 } = require("../model/authModel");
 
 const getRefreshTokenCookieName = (role) => {
-  return role === "seller" ? "sellerRefreshToken" : "buyerRefreshToken";
+  return role === "seller"
+    ? "sellerRefreshToken"
+    : role === "buyer"
+      ? "buyerRefreshToken"
+      : "adminRefreshToken";
 };
 
 const setRefreshTokenCookie = (res, refreshToken, role) => {
@@ -58,7 +62,7 @@ const registerController = async (req, res) => {
     });
   }
 
-  if (!["buyer", "seller"].includes(role)) {
+  if (!["buyer", "seller", "admin"].includes(role)) {
     return res.status(400).json({
       status: 400,
       message: "Invalid role",
@@ -104,17 +108,21 @@ const registerController = async (req, res) => {
           await createRefeshToken(refreshToken, isUserExist._id);
 
           setRefreshTokenCookie(res, refreshToken, "seller");
-
           return res.status(200).json({
-            message: "User role updated successfully",
+            message: "Seller Details created successfully",
             status: 200,
             data: isUserExist,
           });
         }
       }
+      return res.status(200).json({
+        message: "User role updated successfully",
+        status: 200,
+        data: isUserExist,
+      });
     }
 
-    if (role === "buyer") {
+    if (role === "buyer" || role === "admin") {
       const isUserCreated = await createUserCollection(
         gmail,
         password,
@@ -137,8 +145,6 @@ const registerController = async (req, res) => {
         mobile,
         role,
       );
-
-      console.log(isUserCreated);
 
       await createSellerCollection(isUserCreated._id);
       const accessToken = generatAccessToken(gmail, isUserCreated._id);
@@ -269,7 +275,9 @@ const loginController = async (req, res) => {
       ? req.body.role
       : empDetails.roles?.includes("seller")
         ? "seller"
-        : "buyer";
+        : empDetails.roles?.includes("admin")
+          ? "admin"
+          : "buyer";
 
     setRefreshTokenCookie(res, refreshToken, loginRole);
 
