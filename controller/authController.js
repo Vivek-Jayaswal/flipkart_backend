@@ -17,6 +17,8 @@ const {
   findSellerById,
   updateRoleInCollection,
   updateSellerCollection,
+  updateSellerDataInCollection,
+  findRegreshTokenAndDelete,
 } = require("../model/authModel");
 
 const getRefreshTokenCookieName = (role) => {
@@ -197,6 +199,14 @@ const sellerDetailsRegisterController = async (req, res) => {
         storeAddress: storeAddress,
         bankDetails: bankDetails,
       });
+
+      const ud = await updateSellerDataInCollection({
+        id: isUserExist._id,
+        name: name,
+        address: address,
+      });
+
+      console.log(ud);
 
       return res.status(200).json({
         status: 200,
@@ -443,15 +453,14 @@ const verifySellerAuthController = async (req, res) => {
     }
 
     // Get seller details
-    const seller = await findSellerById(user._id);
+    const seller = await findUserById(user._id);
+    console.log("seller", seller);
 
     return res.status(200).json({
       status: 200,
       message: "Seller verified successfully",
-      data: {
-        isSellerProfileCompleted: seller?.isSellerProfileCompleted ?? false,
-        role: "seller",
-      },
+      data: seller,
+      role: "seller",
     });
   } catch (error) {
     console.log(error);
@@ -492,6 +501,37 @@ const verifyBuyerAuthController = async (req, res) => {
   }
 };
 
+const logoutController = async (req, res) => {
+  const role = req.body.role;
+  const cookieName =
+    role === "seller" ? "sellerRefreshToken" : "buyerRefreshToken";
+
+  const refreshToken = req.cookies[cookieName];
+
+  try {
+    if (refreshToken) {
+      await findRegreshTokenAndDelete(refreshToken);
+    }
+
+    res.clearCookie(cookieName, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "strict",
+    });
+
+    return res.status(200).json({
+      message: "Logout Successfull",
+      status: 200,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      status: 500,
+      error: error,
+    });
+  }
+};
+
 module.exports = {
   registerController,
   loginController,
@@ -501,4 +541,5 @@ module.exports = {
   sellerDetailsRegisterController,
   verifySellerAuthController,
   verifyBuyerAuthController,
+  logoutController,
 };

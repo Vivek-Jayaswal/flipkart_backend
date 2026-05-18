@@ -11,6 +11,7 @@ const {
   sellerDetailsRegisterController,
   verifySellerAuthController,
   verifyBuyerAuthController,
+  logoutController,
 } = require("../controller/authController");
 const { isAuthMiddleWare } = require("../middlewares/authMiddleWare.js");
 const { isSellerMiddleWare } = require("../middlewares/isSellerMiddleWare.js");
@@ -26,6 +27,7 @@ authRouter.post(
   sellerDetailsRegisterController,
 );
 authRouter.post("/login", loginController);
+authRouter.post("/logout", logoutController);
 authRouter.post("/refresh-token", refreshTokenController);
 
 // Verification endpoints - call these on app initialization
