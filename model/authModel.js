@@ -92,10 +92,13 @@ const findRegreshTokenAndDelete = async (token) => {
 
 const createSellerCollection = (user) => {
   return new Promise(async (resolve, reject) => {
+    console.log("creating seller collection for user:", user);
     try {
       const seller = new sellerSchema({
         userId: user,
       });
+
+      console.log("seller collection created, saving...", seller);
       const sellerCreated = await seller.save();
       resolve(sellerCreated);
     } catch (error) {

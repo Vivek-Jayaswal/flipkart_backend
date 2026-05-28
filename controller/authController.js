@@ -115,6 +115,7 @@ const registerController = async (req, res) => {
           });
         }
       }
+
       return res.status(200).json({
         message: "User role updated successfully",
         status: 200,
@@ -131,6 +132,8 @@ const registerController = async (req, res) => {
         name,
         address,
       );
+
+      console.log("user", isUserCreated);
       return res.send({
         status: 200,
         message: "User registered successfully",
@@ -162,8 +165,7 @@ const registerController = async (req, res) => {
       });
     }
   } catch (err) {
-    console.log(err);
-
+    console.log("error",err);
     return res.status(500).json({
       status: 500,
       message: "Internal server error",
@@ -185,7 +187,7 @@ const sellerDetailsRegisterController = async (req, res) => {
 
   const userInfo = req.user;
 
-  console.log("info", userInfo._id);
+  // console.log("info", userInfo._id);
 
   if (!userInfo.roles.includes("seller")) {
     return res.status(400).json({
@@ -212,7 +214,7 @@ const sellerDetailsRegisterController = async (req, res) => {
         address: address,
       });
 
-      console.log(ud);
+      // console.log(ud);
 
       return res.status(200).json({
         status: 200,
@@ -226,7 +228,7 @@ const sellerDetailsRegisterController = async (req, res) => {
       message: "User not found for given mail id",
     });
   } catch (err) {
-    console.log(err);
+    // console.log(err);
 
     return res.status(500).json({
       status: 500,
@@ -320,7 +322,7 @@ const sendOtpController = async (req, res) => {
   }
   try {
     const isUserExist = await findUserByEmail(gmail);
-    console.log(isUserExist);
+    // console.log(isUserExist);
 
     if (isUserExist && isUserExist.roles.includes(role)) {
       return res.status(400).json({
@@ -349,7 +351,6 @@ const sendOtpController = async (req, res) => {
 // verify otp controller
 const verifyOtpController = async (req, res) => {
   const { gmail, otp, role } = req.body;
-  console.log("calling");
 
   if (!gmail || !otp || !role) {
     return res.status(400).json({
@@ -462,7 +463,6 @@ const verifySellerAuthController = async (req, res) => {
 
     // Get seller details
     const seller = await findUserById(user._id);
-    console.log("seller", seller);
 
     return res.status(200).json({
       status: 200,

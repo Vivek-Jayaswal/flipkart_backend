@@ -1,55 +1,128 @@
 const mongoose = require("mongoose");
-const Schema = mongoose.Schema;
 
-const productSchema = new Schema(
+const variantSchema = new mongoose.Schema(
+  {
+    attributes: {
+      color: String,
+
+      size: String,
+
+      storage: String,
+
+      ram: String,
+    },
+
+    sku: String,
+
+    price: Number,
+
+    stock: Number,
+
+    images: [
+      {
+        public_id: String,
+
+        url: String,
+      },
+    ],
+  },
+
+  {
+    _id: false,
+  },
+);
+
+const specificationSchema = new mongoose.Schema(
+  {
+    key: String,
+
+    value: String,
+  },
+
+  {
+    _id: false,
+  },
+);
+
+const productSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: true,
-      trim: true,
     },
 
-    description: {
+    slug: {
       type: String,
-      required: true,
+      unique: true,
     },
+
+    shortDescription: String,
+
+    description: String,
 
     brand: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+
+      ref: "Brand",
     },
 
     category: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+
+      ref: "Category",
+
       required: true,
     },
+
+    seller: {
+      type: mongoose.Schema.Types.ObjectId,
+
+      ref: "user",
+    },
+
+    sku: {
+      type: String,
+      unique: true,
+    },
+
+    barcode: String,
 
     price: {
       type: Number,
       required: true,
     },
 
-    discountPrice: {
-      type: Number,
-    },
+    salePrice: Number,
 
     stock: {
       type: Number,
-      required: true,
+      default: 0,
     },
 
-    imagePath: {
-      type: String,
+    sold: {
+      type: Number,
+      default: 0,
     },
 
-    imageURL: {
-      type: String,
+    thumbnail: {
+      public_id: String,
+
+      url: String,
     },
 
-    sellerId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Seller",
-      required: true,
-    },
+    images: [
+      {
+        public_id: String,
+
+        url: String,
+      },
+    ],
+
+    variants: [variantSchema],
+
+    specifications: [specificationSchema],
+
+    tags: [String],
 
     ratings: {
       type: Number,
@@ -61,12 +134,57 @@ const productSchema = new Schema(
       default: 0,
     },
 
-    isActive: {
+    status: {
+      type: String,
+
+      enum: ["draft", "pending", "approved", "rejected"],
+
+      default: "pending",
+    },
+
+    isFeatured: {
       type: Boolean,
-      default: true,
+      default: false,
+    },
+
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+
+      ref: "user",
+    },
+
+    updatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+
+      ref: "user",
     },
   },
-  { timestamps: true },
+
+  {
+    timestamps: true,
+    strict: true,
+  },
 );
 
-module.exports = mongoose.model("product", productSchema);
+productSchema.index({
+  category: 1,
+});
+
+productSchema.index({
+  brand: 1,
+});
+
+productSchema.index({
+  seller: 1,
+});
+
+productSchema.index({
+  price: 1,
+});
+
+productSchema.index({
+  name: "text",
+  description: "text",
+});
+
+module.exports = mongoose.model("Product", productSchema);
