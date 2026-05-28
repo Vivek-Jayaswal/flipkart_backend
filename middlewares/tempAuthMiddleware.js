@@ -2,7 +2,9 @@ const jwt = require("jsonwebtoken");
 
 const tempAuthMiddleware = (req, res, next) => {
   const token = req.headers?.authorization?.split(" ")[1];
-  console.log(token);
+
+  console.log("temp auth token");
+
   if (!token) {
     return res.status(401).json({
       message: "No Token Provided!",
@@ -18,6 +20,8 @@ const tempAuthMiddleware = (req, res, next) => {
         status: 403,
       });
     }
+
+    console.log("temp auth decode rrtrtrt");
 
     req.tempUser = decode;
     next();
