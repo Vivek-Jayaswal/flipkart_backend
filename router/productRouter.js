@@ -17,7 +17,7 @@ productRouter.post(
   "/create-product",
   isAuthMiddleWare,
   isSellerMiddleWare,
-  upload.single("image"),
+  // upload.single("image"),
   createProductController,
 );
 productRouter.get("/get-all-product", getAllProductController);

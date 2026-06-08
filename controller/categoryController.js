@@ -188,6 +188,7 @@ const updateCategoryController = async (req, res) => {
     });
   }
 };
+
 const deleteCategoryController = async (req, res) => {
   const user = req.user;
 
@@ -307,10 +308,60 @@ const getSingleCategoryController = async (req, res) => {
   }
 };
 
+const getFormattedCategoriesController = async (req, res) => {
+  try {
+    const categories = await findAllCategories();
+
+    // Map categories by ID for quick O(1) lookups
+    const itemMap = {};
+    categories.forEach((cat) => {
+      itemMap[cat._id.toString()] = {
+        value: cat._id.toString(), // Used as the HTML option value
+        label: cat.name, // UI Display text
+        children: [], // Holds subcategories
+      };
+    });
+
+    const rootCategories = [];
+
+    // Build the nested hierarchy
+    categories.forEach((cat) => {
+      const mappedItem = itemMap[cat._id.toString()];
+      if (!cat.parentCategory) {
+        // Top-level parent
+        rootCategories.push(mappedItem);
+      } else {
+        // Subcategory: attach to its parent item
+        const parentId = cat.parentCategory.toString();
+        if (itemMap[parentId]) {
+          itemMap[parentId].children.push(mappedItem);
+        }
+      }
+    });
+
+    // Clean up empty 'children' arrays so UI components know where it ends
+    const removeEmptyChildren = (nodes) => {
+      nodes.forEach((node) => {
+        if (node.children.length === 0) {
+          delete node.children;
+        } else {
+          removeEmptyChildren(node.children);
+        }
+      });
+    };
+    removeEmptyChildren(rootCategories);
+
+    return res.status(200).json({ success: true, data: rootCategories });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 module.exports = {
   createCategoryController,
   updateCategoryController,
   deleteCategoryController,
   getAllCategoriesController,
   getSingleCategoryController,
+  getFormattedCategoriesController,
 };

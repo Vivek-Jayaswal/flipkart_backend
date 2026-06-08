@@ -1,190 +1,202 @@
 const mongoose = require("mongoose");
-
-const variantSchema = new mongoose.Schema(
-  {
-    attributes: {
-      color: String,
-
-      size: String,
-
-      storage: String,
-
-      ram: String,
-    },
-
-    sku: String,
-
-    price: Number,
-
-    stock: Number,
-
-    images: [
-      {
-        public_id: String,
-
-        url: String,
-      },
-    ],
-  },
-
-  {
-    _id: false,
-  },
-);
-
-const specificationSchema = new mongoose.Schema(
-  {
-    key: String,
-
-    value: String,
-  },
-
-  {
-    _id: false,
-  },
-);
+const productVariantSchema = require("./variantSchema.js");
+const specificationSchema = require("./specificationSchema.js");
 
 const productSchema = new mongoose.Schema(
   {
-    name: {
+    seller: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+
+    title: {
       type: String,
       required: true,
+      trim: true,
+      maxlength: 300,
     },
 
     slug: {
       type: String,
+      required: true,
       unique: true,
+      lowercase: true,
     },
 
-    shortDescription: String,
+    shortDescription: {
+      type: String,
+      required: true,
+      maxlength: 1000,
+    },
 
-    description: String,
+    description: {
+      type: String,
+      required: true,
+    },
 
     brand: {
       type: mongoose.Schema.Types.ObjectId,
-
       ref: "Brand",
+      required: true,
     },
+
+    // categories: {
+    //   type: [
+    //     {
+    //       type: mongoose.Schema.Types.ObjectId,
+    //       ref: "Category",
+    //     },
+    //   ],
+    //   validate: [(arr) => arr.length > 0, "At least one category is required"],
+    // },
 
     category: {
       type: mongoose.Schema.Types.ObjectId,
-
       ref: "Category",
-
       required: true,
-    },
-
-    seller: {
-      type: mongoose.Schema.Types.ObjectId,
-
-      ref: "user",
-    },
-
-    sku: {
-      type: String,
-      unique: true,
-    },
-
-    barcode: String,
-
-    price: {
-      type: Number,
-      required: true,
-    },
-
-    salePrice: Number,
-
-    stock: {
-      type: Number,
-      default: 0,
-    },
-
-    sold: {
-      type: Number,
-      default: 0,
     },
 
     thumbnail: {
-      public_id: String,
-
       url: String,
+      public_id: String,
     },
 
-    images: [
+    gallery: [
       {
-        public_id: String,
-
         url: String,
+        public_id: String,
       },
     ],
 
-    variants: [variantSchema],
-
-    specifications: [specificationSchema],
+    // videoUrl: String,
 
     tags: [String],
 
+    variants: [productVariantSchema],
+
+    specifications: [specificationSchema],
+
+    warranty: {
+      type: String,
+      default: "No Warranty",
+    },
+
+    returnPolicy: {
+      type: String,
+      default: "7 Days Return",
+    },
+
+    currentStep: {
+      type: Number,
+      default: 1,
+    },
+
+    shippingInfo: {
+      dispatchTime: {
+        type: String,
+        default: "2 Days",
+      },
+
+      freeShipping: {
+        type: Boolean,
+        default: false,
+      },
+    },
+
     ratings: {
+      average: {
+        type: Number,
+        default: 0,
+      },
+
+      count: {
+        type: Number,
+        default: 0,
+      },
+    },
+
+    totalSales: {
       type: Number,
       default: 0,
     },
 
-    numReviews: {
+    views: {
       type: Number,
       default: 0,
+    },
+
+    seo: {
+      metaTitle: String,
+      metaDescription: String,
+      keywords: [String],
     },
 
     status: {
       type: String,
-
       enum: ["draft", "pending", "approved", "rejected"],
-
-      default: "pending",
+      default: "draft",
     },
+
+    approvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+
+    approvedAt: Date,
+
+    rejectionReason: String,
 
     isFeatured: {
       type: Boolean,
       default: false,
     },
 
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-
-      ref: "user",
+    isFlashSale: {
+      type: Boolean,
+      default: false,
     },
 
-    updatedBy: {
-      type: mongoose.Schema.Types.ObjectId,
+    flashSalePrice: {
+      type: Number,
+      default: 0,
+    },
 
-      ref: "user",
+    flashSaleStart: Date,
+
+    flashSaleEnd: Date,
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
     },
   },
-
   {
     timestamps: true,
-    strict: true,
   },
 );
 
-productSchema.index({
-  category: 1,
-});
+// productSchema.index({
+//   title: "text",
+//   shortDescription: "text",
+//   description: "text",
+//   tags: "text",
+// });
 
-productSchema.index({
-  brand: 1,
-});
+// productSchema.index({
+//   seller: 1,
+// });
 
-productSchema.index({
-  seller: 1,
-});
+// productSchema.index({
+//   brand: 1,
+// });
 
-productSchema.index({
-  price: 1,
-});
+// productSchema.index({
+//   categories: 1,
+// });
 
-productSchema.index({
-  name: "text",
-  description: "text",
-});
+// productSchema.index({
+//   status: 1,
+// });
 
 module.exports = mongoose.model("Product", productSchema);

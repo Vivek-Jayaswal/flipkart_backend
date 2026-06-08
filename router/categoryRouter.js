@@ -5,6 +5,7 @@ const {
   updateCategoryController,
   getAllCategoriesController,
   getSingleCategoryController,
+  getFormattedCategoriesController,
 } = require("../controller/categoryController");
 const { isAuthMiddleWare } = require("../middlewares/authMiddleWare");
 const categoryRouter = express.Router();
@@ -30,6 +31,11 @@ categoryRouter.get(
   "/get-all-category",
   isAuthMiddleWare,
   getAllCategoriesController,
+);
+categoryRouter.get(
+  "/get-formatted-categories",
+  isAuthMiddleWare,
+  getFormattedCategoriesController,
 );
 categoryRouter.get(
   "/get-single-category/:id",
