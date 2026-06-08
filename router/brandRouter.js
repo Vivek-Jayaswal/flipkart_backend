@@ -7,7 +7,7 @@ const {
   getSingleBrandController,
 } = require("../controller/brandController");
 const { isAuthMiddleWare } = require("../middlewares/authMiddleWare");
-const { logoUpload } = require("../middlewares/upload");
+const { upload } = require("../middlewares/upload");
 const brandRouter = express.Router();
 
 // file import
@@ -15,13 +15,13 @@ const brandRouter = express.Router();
 brandRouter.post(
   "/create-brand",
   isAuthMiddleWare,
-  logoUpload.single("logo"),
+  upload.single("logo"),
   createBrandController,
 );
 brandRouter.post(
   "/update-brand/:id",
   isAuthMiddleWare,
-  logoUpload.single("logo"),
+  upload.single("logo"),
   updateBrandController,
 );
 brandRouter.delete(

@@ -7,9 +7,10 @@ const cors = require("cors");
 // file import
 const db = require("./db");
 const authRouter = require("./router/authRouters");
-const productRouter = require("./router/productRouter");
 const categoryRouter = require("./router/categoryRouter");
 const brandRouter = require("./router/brandRouter");
+const productRouter = require("./modules/product/product.route");
+const { default: errorHandler } = require("./utils/errorHandler");
 
 // middle ware
 app.use(express.json());
@@ -29,6 +30,8 @@ app.use("/auth", authRouter);
 app.use("/product", productRouter);
 app.use("/category", categoryRouter);
 app.use("/brand", brandRouter);
+
+app.use(errorHandler);
 
 app.listen(8000, () => {
   console.log("server running on port 8000");
