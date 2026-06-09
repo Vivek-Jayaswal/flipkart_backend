@@ -68,12 +68,12 @@ const saveInventory = async (req, res) => {
   });
 };
 
-const submitProduct = async (req, res) => {
+const submitProductForApproval = async (req, res) => {
   const product = await submitProductService(req);
 
   return apiResponse(res, {
     statusCode: 200,
-    message: "Product submitted successfully",
+    message: "Product submitted for approval",
     data: product,
   });
 };
@@ -93,6 +93,6 @@ module.exports = {
   saveSpecifications,
   getAllProductController,
   saveInventory,
-  submitProduct,
+  submitProductForApproval,
   saveVariantImages,
 };
