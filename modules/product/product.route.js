@@ -54,7 +54,7 @@ productRouter.patch(
   asyncHandler(saveSpecifications),
 );
 
-productRouter.patch(
+productRouter.post(
   "/:id/save-inventory",
   isAuthMiddleWare,
   asyncHandler(saveInventory),

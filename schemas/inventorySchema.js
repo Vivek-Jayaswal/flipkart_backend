@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const inventorySchema = new mongoose.Schema(
   {
-    product: {
+    productId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Product",
       required: true,
@@ -10,6 +10,11 @@ const inventorySchema = new mongoose.Schema(
 
     variantSku: {
       type: String,
+      required: true,
+    },
+
+    variantId: {
+      type: mongoose.Schema.Types.ObjectId,
       required: true,
     },
 

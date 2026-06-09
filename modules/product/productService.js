@@ -193,6 +193,106 @@ const saveSpecificationsService = async (req) => {
   return product;
 };
 
+const saveInventoryService = async (req) => {
+  const { id } = req.params;
+  const sellerId = req.user._id;
+  const { inventory } = req.body;
+
+  // Product verify
+  const product = await Product.findOne({
+    _id: id,
+    seller: sellerId,
+  });
+
+  if (!product) {
+    throw apiError(404, "Product not found");
+  }
+
+  // Variant check
+  if (!product.variants || product.variants.length === 0) {
+    throw apiError(400, "Please create product variants before inventory");
+  }
+
+  // Inventory payload validation
+  if (!inventory || !Array.isArray(inventory) || inventory.length === 0) {
+    throw apiError(
+      400,
+      "Inventory data is required and should be a non-empty array",
+    );
+  }
+
+  // Product ke valid variant ids
+  const validVariantIds = product.variants.map((variant) =>
+    variant._id.toString(),
+  );
+
+  // Validate inventory items
+  for (const item of inventory) {
+    console.log("Validating inventory item:", item);
+    if (!item.variantId) {
+      throw apiError(400, "variantId is required for every inventory item");
+    }
+
+    if (!validVariantIds.includes(item.variantId.toString())) {
+      throw apiError(400, `Invalid variantId: ${item.variantId}`);
+    }
+
+    if (item.quantity < 0) {
+      throw apiError(400, "Quantity cannot be negative");
+    }
+
+    if (
+      item.reservedQuantity &&
+      Number(item.reservedQuantity) > Number(item.quantity)
+    ) {
+      throw apiError(400, "Reserved quantity cannot exceed quantity");
+    }
+  }
+
+  // Bulk upsert
+  const bulkOps = inventory.map((item) => ({
+    updateOne: {
+      filter: {
+        productId: product._id,
+        variantId: item.variantId,
+        warehouse: item.warehouse || "MAIN",
+      },
+
+      update: {
+        $set: {
+          quantity: item.quantity,
+          variantSku: item.variantSku,
+          lowStockThreshold: item.lowStockThreshold || 5,
+          warehouse: item.warehouse || "MAIN",
+        },
+
+        $setOnInsert: {
+          productId: product._id,
+          variantId: item.variantId,
+          reservedQuantity: item.reservedQuantity || 0,
+        },
+      },
+
+      upsert: true,
+    },
+  }));
+
+  const result = await Inventory.bulkWrite(bulkOps);
+
+  // Create flow step update
+  if (product.currentStep < 4) {
+    product.currentStep = 4;
+    await product.save();
+  }
+
+  return {
+    success: true,
+    inventoryCreated: result.upsertedCount,
+    inventoryUpdated: result.modifiedCount,
+    currentStep: product.currentStep,
+  };
+};
+
 const submitProductService = async (req) => {
   const { id } = req.params;
 
@@ -235,4 +335,5 @@ module.exports = {
   getAllProductService,
   submitProductService,
   saveVariantImagesService,
+  saveInventoryService,
 };

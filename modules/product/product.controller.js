@@ -6,6 +6,7 @@ const {
   saveVariantsService,
   getAllProductService,
   saveVariantImagesService,
+  saveInventoryService,
 } = require("./productService");
 
 const createDraftProduct = async (req, res) => {
@@ -58,7 +59,7 @@ const saveSpecifications = async (req, res) => {
 };
 
 const saveInventory = async (req, res) => {
-  // const inventory = await saveInventoryService(req);
+  const inventory = await saveInventoryService(req);
 
   return apiResponse(res, {
     statusCode: 200,
