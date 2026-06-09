@@ -302,16 +302,31 @@ const submitProductService = async (req) => {
     throw apiError(404, "Product not found");
   }
 
-  if (!product.variants.length) {
+  if (product.variants.length === 0) {
     throw apiError(400, "Variants required");
   }
 
-  const inventoryExists = await Inventory.exists({
-    product: id,
+  const inventoryExists = await Inventory.find({
+    productId: id,
   });
 
-  if (!inventoryExists) {
+  if (!inventoryExists || inventoryExists.length === 0) {
     throw apiError(400, "Inventory required");
+  }
+
+  const inventeryIds = new Set(
+    inventoryExists?.map((inv) => inv.variantId.toString()),
+  );
+
+  const isAllVariantHaveInventory = product.variants.every((variant) =>
+    inventeryIds.has(variant?._id?.toString()),
+  );
+
+  if (!isAllVariantHaveInventory) {
+    throw apiError(
+      400,
+      "All variants must have inventory data please add inventory for all variants",
+    );
   }
 
   product.status = "pending";
@@ -324,7 +339,10 @@ const submitProductService = async (req) => {
 };
 
 const getAllProductService = async (req) => {
-  const products = await Product.find().populate("category").populate("brand");
+  const { status = "pending" } = req.query;
+  const products = await Product.find({ status })
+    .populate("category")
+    .populate("brand");
   return products;
 };
 

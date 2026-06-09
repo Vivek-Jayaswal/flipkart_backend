@@ -8,7 +8,7 @@ const {
   saveVariants,
   saveSpecifications,
   saveInventory,
-  submitProduct,
+  submitProductForApproval,
   saveVariantImages,
 } = require("./product.controller");
 
@@ -60,10 +60,10 @@ productRouter.post(
   asyncHandler(saveInventory),
 );
 
-productRouter.patch(
+productRouter.post(
   "/:id/submit-product",
   isAuthMiddleWare,
-  asyncHandler(submitProduct),
+  asyncHandler(submitProductForApproval),
 );
 // productRouter.delete("/delete-product", asyncHandler(deleteProductController));
 // productRouter.get("/get-single-product", asyncHandler(getSingleProductController));

@@ -10,6 +10,7 @@ const authRouter = require("./router/authRouters");
 const categoryRouter = require("./router/categoryRouter");
 const brandRouter = require("./router/brandRouter");
 const productRouter = require("./modules/product/product.route");
+const approvalRouter = require("./modules/product-approval/approval.route");
 const { default: errorHandler } = require("./utils/errorHandler");
 
 // middle ware
@@ -30,6 +31,7 @@ app.use("/auth", authRouter);
 app.use("/product", productRouter);
 app.use("/category", categoryRouter);
 app.use("/brand", brandRouter);
+app.use("/approval", approvalRouter);
 
 app.use(errorHandler);
 
