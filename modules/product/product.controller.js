@@ -7,6 +7,7 @@ const {
   getAllProductService,
   saveVariantImagesService,
   saveInventoryService,
+  getProductDetailsService,
 } = require("./productService");
 
 const createDraftProduct = async (req, res) => {
@@ -87,6 +88,15 @@ const getAllProductController = async (req, res) => {
   });
 };
 
+const getProductDetailsController = async (req, res) => {
+  const product = await getProductDetailsService(req);
+  return apiResponse(res, {
+    statusCode: 200,
+    message: "Products fetched successfully",
+    data: product,
+  });
+};
+
 module.exports = {
   createDraftProduct,
   saveVariants,
@@ -95,4 +105,5 @@ module.exports = {
   saveInventory,
   submitProductForApproval,
   saveVariantImages,
+  getProductDetailsController,
 };

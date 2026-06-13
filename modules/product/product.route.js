@@ -10,6 +10,7 @@ const {
   saveInventory,
   submitProductForApproval,
   saveVariantImages,
+  getProductDetailsController,
 } = require("./product.controller");
 
 productRouter.post(
@@ -66,7 +67,10 @@ productRouter.post(
   asyncHandler(submitProductForApproval),
 );
 // productRouter.delete("/delete-product", asyncHandler(deleteProductController));
-// productRouter.get("/get-single-product", asyncHandler(getSingleProductController));
+productRouter.get(
+  "/get-product-details/:id",
+  asyncHandler(getProductDetailsController),
+);
 // productRouter.get("/search-product", asyncHandler(searchProductController));
 
 module.exports = productRouter;
