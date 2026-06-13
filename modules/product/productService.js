@@ -15,6 +15,7 @@ const {
   getFileUrl,
 } = require("../../utils/fileHelprs");
 const { createTags } = require("../../utils/createTags");
+const mongoose = require("mongoose");
 
 const createProductService = async (req) => {
   const sellerId = req.user._id;
@@ -339,8 +340,18 @@ const submitProductService = async (req) => {
 };
 
 const getAllProductService = async (req) => {
-  const { status = "pending" } = req.query;
+  const { status = "approved" } = req.query;
   const products = await Product.find({ status })
+    .populate("category")
+    .populate("brand");
+  return products;
+};
+
+const getProductDetailsService = async (req) => {
+  const { id } = req.params;
+  const mongoId = new mongoose.Types.ObjectId(id);
+  const { status = "approved" } = req.query;
+  const products = await Product.findById(mongoId)
     .populate("category")
     .populate("brand");
   return products;
@@ -354,4 +365,5 @@ module.exports = {
   submitProductService,
   saveVariantImagesService,
   saveInventoryService,
+  getProductDetailsService,
 };
